@@ -44,8 +44,8 @@ def upload_image():
     return jsonify({
         'otsu_value': otsu_value,
         'category': category,
-        'original_image': send_file(BytesIO(image_data), mimetype='image/jpeg'),
-        'thresholded_image': send_file(result_image_data, mimetype='image/jpeg')
+        # 'original_image': send_file(BytesIO(image_data), mimetype='image/jpeg'),
+        # 'thresholded_image': send_file(result_image_data, mimetype='image/jpeg')
     })
 
 if __name__ == 'main':
