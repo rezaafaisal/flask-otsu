@@ -13,7 +13,7 @@ def otsu_thresholding(image):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return '<h1>haloo</h1>'
 
 class ArduinoImageResource(Resource):
     def post(self):
@@ -40,4 +40,4 @@ class ArduinoImageResource(Resource):
 api.add_resource(ArduinoImageResource, '/receive_image')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0')
