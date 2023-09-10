@@ -1,43 +1,51 @@
-from flask import Flask, render_template, request, redirect, url_for
-from flask_restful import Api, Resource
-# import cv2
+from flask import Flask, request, jsonify, send_file
+import cv2
 import numpy as np
-import base64
+from io import BytesIO
 
 app = Flask(__name__)
-api = Api(app)  # Membuat instance Flask-RESTful API
 
-# def otsu_thresholding(image):
-#     _, segmented_image = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-#     return segmented_image
+@app.route('/', methods=['GET'])
+def hello():
+    return "haloo"
 
-@app.route('/')
-def index():
-    return '<h1>haloo</h1>'
+@app.route('/upload_image', methods=['POST'])
+def upload_image():
+    if 'image' not in request.files:
+        return "No image file provided", 400
 
-# class ArduinoImageResource(Resource):
-#     def post(self):
-#         image_data = request.data  # Menerima gambar dari Arduino dalam format yang sesuai
-#         original_asli = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_UNCHANGED)
-#         original_image = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_GRAYSCALE)
-#         segmented_image = otsu_thresholding(original_image)
+    image_file = request.files['image']
+    image_data = image_file.read()
 
-#         _, original_buffer = cv2.imencode('.png', original_image)
-#         original_image_base64 = base64.b64encode(original_buffer).decode('utf-8')
+    # Ubah data gambar menjadi format yang dapat digunakan oleh OpenCV
+    image_np = np.frombuffer(image_data, np.uint8)
+    image = cv2.imdecode(image_np, cv2.IMREAD_COLOR)
 
-#         _, segmented_buffer = cv2.imencode('.png', segmented_image)
-#         segmented_image_base64 = base64.b64encode(segmented_buffer).decode('utf-8')
+    # Analisis citra menggunakan Otsu Thresholding
+    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    _, thresholded_image = cv2.threshold(gray_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
-#         _, asli_buffer = cv2.imencode('.png', original_asli)
-#         original_asli_base64 = base64.b64encode(asli_buffer).decode('utf-8')
+    # Hitung nilai Otsu
+    otsu_value = cv2.mean(thresholded_image)[0]
 
-#         return {
-#             'original_asli_base64': original_asli_base64,
-#             'original_image_base64': original_image_base64,
-#             'segmented_image_base64': segmented_image_base64
-#         }
+    # Tentukan kategori berdasarkan nilai Otsu
+    if otsu_value < 50:
+        category = "Keruh Sekali"
+    elif otsu_value < 100:
+        category = "Lumayan Keruh"
+    else:
+        category = "Air Bersih"
 
-# api.add_resource(ArduinoImageResource, '/receive_image')
+    # Simpan gambar hasil thresholding
+    _, buffer = cv2.imencode('.jpg', thresholded_image)
+    result_image_data = BytesIO(buffer)
 
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0')
+    return jsonify({
+        'otsu_value': otsu_value,
+        'category': category,
+        'original_image': send_file(BytesIO(image_data), mimetype='image/jpeg'),
+        'thresholded_image': send_file(result_image_data, mimetype='image/jpeg')
+    })
+
+if __name__ == 'main':
+    app.run(host='0.0.0.0', port=5000)
