@@ -9,6 +9,7 @@ from datetime import datetime
 import pytz
 from werkzeug.utils import secure_filename
 import json
+import logging
 
 app = Flask(__name__)
 
@@ -105,8 +106,15 @@ def read_json(filename):
         data = json.load(json_file)
     return data
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/', methods=['GETk', 'POSTj'])
 def main():
+    if request.method == 'GET':
+        app.logger.debug('this is a DEBUG message')
+        app.logger.info('this is an INFO message')
+        app.logger.warning('this is a WARNING message')
+        app.logger.error('this is an ERROR message')
+        app.logger.critical('this is a CRITICAL message')
+        
     if request.method == 'POST':
         data = request.get_json()
         chat_id, message_text = parse_message(data)
@@ -150,7 +158,7 @@ def main():
         else:
             return f"Gagal mengirim pesan. Status Code: {response.status_code}\n{response.text}"
         
-    return "welcome"
+    return "welcome to mobile legend"
 
 @app.route('/upload', methods=['POST'])
 def upload_image():
@@ -190,4 +198,9 @@ def send_text():
     return text
 
 if __name__ == 'main':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True)
+    
+else:
+    gunicorn_logger = logging.getLogger('gunicorn.error')
+    app.logger.handlers = gunicorn_logger.handlers
+    app.logger.setLevel(gunicorn_logger.level)
