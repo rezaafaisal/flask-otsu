@@ -184,5 +184,10 @@ def upload_image():
     else:
         return f"Gagal mengirim foto. Status Code: {response.status_code}\n{response.text}"
 
+@app.route('/send-text', methods=['POST'])
+def send_text():
+    text = request.form['text']
+    return text
+
 if __name__ == 'main':
     app.run(host='0.0.0.0', port=5000)
