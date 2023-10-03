@@ -44,7 +44,7 @@ def image_proccess(image_request):
     
         # compress image
         img = Image.open(image_path)
-        img = img.resize((300, 300), Image.LANCZOS)
+        img = img.resize((600, 600), Image.LANCZOS)
         img = img.convert('RGB')
         img.save(image_path, optimize=True, quality=95)
         return image_path, filename
@@ -65,24 +65,36 @@ def otsu_proccess(image_path):
     else:
         category = "Air Bersih"
 
-    # Simpan gambar hasil thresholding
-    _, buffer = cv2.imencode('.jpg', thresholded_image)
-    result_image_data = BytesIO(buffer)
-    
-    return otsu_value, category
 
-def send_image(chat_id, image_path, filename, caption):
-    with open(image_path, 'rb') as photo_file:
-        files = {
-            'photo': ('halo.jpg', photo_file),
-        }
+    # Simpan gambar hasil thresholding
+    output_path = 'images/threshold.jpg'
+    cv2.imwrite(output_path, thresholded_image)
     
-        data = {
-            'chat_id': chat_id,
-            'caption': caption
-        }
+    return otsu_value, category, output_path
+
+def send_image(chat_id, image_path, result_img, filename, caption):
+    files = {
+        'original': open(image_path, 'rb'),
+        'result' : open(result_img, 'rb')
+    }
+    
+    data = {
+        'chat_id': chat_id,
+        'media': json.dumps([
+            {'type': 'photo', 'media': 'attach://original'},
+            {'type': 'photo', 'media': 'attach://result'},
+        ])
+    }
+    
+    text = {
+        'chat_id': chat_id,
+        'text': caption
+    }
         
-        response = requests.post(endpoint('sendPhoto'), data=data, files=files)
+    response = requests.post(endpoint('sendMediaGroup'), data=data, files=files)
+    if response.status_code == 200:
+        requests.post(endpoint('sendMessage'), data=text)
+    
     return response
     
 def send_message(chat_id, text):
@@ -106,7 +118,7 @@ def read_json(filename):
         data = json.load(json_file)
     return data
 
-@app.route('/', methods=['GETk', 'POSTj'])
+@app.route('/', methods=['GET', 'POST'])
 def main():
     if request.method == 'GET':
         app.logger.debug('this is a DEBUG message')
@@ -170,7 +182,7 @@ def upload_image():
     image_path, filename = image_proccess(request.files['image'])
     
     # otsu proccess
-    otsu_value, category = otsu_proccess(image_path)
+    otsu_value, category, result_img = otsu_proccess(image_path)
 
     # send message to telegram
     users = read_json('user.json')
@@ -179,10 +191,12 @@ def upload_image():
         for user in users:
             response = send_image(chat_id=user,
                                 image_path=image_path,
+                                result_img=result_img,
                                 filename=filename,
                                 caption=caption(otsu_value, category))
     # remove file
     os.remove(image_path)
+    os.remove(result_img)
     
     if response is None:
         return "Tidak ada user"
