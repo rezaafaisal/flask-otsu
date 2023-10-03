@@ -58,12 +58,12 @@ def otsu_proccess(image_path):
     otsu_value = cv2.mean(thresholded_image)[0]
 
     # Tentukan kategori berdasarkan nilai Otsu
-    if otsu_value < 50:
-        category = "Keruh Sekali"
-    elif otsu_value < 100:
-        category = "Lumayan Keruh"
+    if otsu_value <= 35:
+        category = "Air rendaman harus diganti"
+    elif otsu_value >= 70 and otsu_value <= 36:
+        category = "Air rendaman lumayan keruh"
     else:
-        category = "Air Bersih"
+        category = "Air rendaman masih jernih"
 
 
     # Simpan gambar hasil thresholding
