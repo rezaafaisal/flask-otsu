@@ -56,7 +56,7 @@ def otsu_proccess(image_path):
     gray_image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
     _, thresholded_image = cv2.threshold(gray_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
-    img_classification = preprocessing_image(image_path)
+    img_classification = predict_image(image_path)
     # Hitung nilai Otsu
     otsu_value = cv2.mean(thresholded_image)[0]
 
@@ -121,7 +121,7 @@ def read_json(filename):
         data = json.load(json_file)
     return data
 
-def preprocessing_image(image_path):
+def predict_image(image_path):
     img_height = img_width = 299
 
     image = cv2.imread(image_path)
