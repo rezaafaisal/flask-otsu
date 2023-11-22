@@ -9,11 +9,13 @@ from datetime import datetime
 import pytz
 from werkzeug.utils import secure_filename
 import json
-import logging
+import tensorflow as tf
 
 app = Flask(__name__)
 
 token = '6391112787:AAGs2P9-7ELdc634teCC7e7wKysqIqa7A7g'
+
+model = tf.keras.models.load_model('model.keras')
 
 def endpoint(method):
     url = 'https://api.telegram.org/bot'+token+'/'+method
@@ -54,6 +56,7 @@ def otsu_proccess(image_path):
     gray_image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
     _, thresholded_image = cv2.threshold(gray_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
+    img_classification = preprocessing_image(image_path)
     # Hitung nilai Otsu
     otsu_value = cv2.mean(thresholded_image)[0]
 
@@ -118,18 +121,28 @@ def read_json(filename):
         data = json.load(json_file)
     return data
 
+def preprocessing_image(image_path):
+    img_height = img_width = 299
+
+    image = cv2.imread(image_path)
+    image = cv2.resize(image, (img_height, img_width))
+
+    predict_result = model.predict(image)
+
+    return predict_result
+
+
+
 @app.route('/', methods=['GET', 'POST'])
 def main():
     if request.method == 'GET':
-        app.logger.debug('this is a DEBUG message')
-        app.logger.info('this is an INFO message')
-        app.logger.warning('this is a WARNING message')
-        app.logger.error('this is an ERROR message')
-        app.logger.critical('this is a CRITICAL message')
+        return "Test"
         
     if request.method == 'POST':
         data = request.get_json()
         chat_id, message_text = parse_message(data)
+        
+
         
         new_data = read_json('user.json')
         # add new subscriber
@@ -190,10 +203,10 @@ def upload_image():
     if users:
         for user in users:
             response = send_image(chat_id=user,
-                                image_path=image_path,
-                                result_img=result_img,
-                                filename=filename,
-                                caption=caption(otsu_value, category))
+                                    image_path=image_path,
+                                    result_img=result_img,
+                                    filename=filename,
+                                    caption=caption(otsu_value, category))
     # remove file
     os.remove(image_path)
     os.remove(result_img)
