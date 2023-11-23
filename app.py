@@ -61,9 +61,9 @@ def otsu_proccess(image_path):
     otsu_value = cv2.mean(thresholded_image)[0]
 
     # Tentukan kategori berdasarkan nilai Otsu
-    if otsu_value <= 35:
+    if (otsu_value <= 35) or img_classification == 'keruh':
         category = "Air rendaman harus diganti"
-    elif otsu_value >= 70 and otsu_value <= 36:
+    elif (otsu_value >= 70 and otsu_value <= 36) or img_classification == 'lumayan_keruh':
         category = "Air rendaman lumayan keruh"
     else:
         category = "Air rendaman masih jernih"
@@ -72,7 +72,8 @@ def otsu_proccess(image_path):
     # Simpan gambar hasil thresholding
     output_path = 'images/threshold.jpg'
     cv2.imwrite(output_path, thresholded_image)
-    
+
+    return img_classification
     return otsu_value, category, output_path
 
 def send_image(chat_id, image_path, result_img, filename, caption):
@@ -123,13 +124,16 @@ def read_json(filename):
 
 def predict_image(image_path):
     img_height = img_width = 299
+    labels = ['jernih', 'keruh', 'lumayan_keruh']
 
     image = cv2.imread(image_path)
     image = cv2.resize(image, (img_height, img_width))
+    image = np.expand_dims(image, axis=0)
+    image = tf.keras.applications.xception.preprocess_input(image)
 
     predict_result = model.predict(image)
 
-    return predict_result
+    return labels[np.argmax(predict_result)]
 
 
 
