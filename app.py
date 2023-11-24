@@ -9,13 +9,10 @@ from datetime import datetime
 import pytz
 from werkzeug.utils import secure_filename
 import json
-import tensorflow as tf
 
 app = Flask(__name__)
 
 token = '6391112787:AAGs2P9-7ELdc634teCC7e7wKysqIqa7A7g'
-
-model = tf.keras.models.load_model('model.keras')
 
 def endpoint(method):
     url = 'https://api.telegram.org/bot'+token+'/'+method
@@ -57,6 +54,7 @@ def otsu_proccess(image_path):
     _, thresholded_image = cv2.threshold(gray_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
     img_classification = predict_image(image_path)
+    # img_classification = 'keruh'
     # Hitung nilai Otsu
     otsu_value = cv2.mean(thresholded_image)[0]
 
@@ -123,15 +121,19 @@ def read_json(filename):
     return data
 
 def predict_image(image_path):
-    img_height = img_width = 299
+    import tensorflow as tf
+    model = tf.keras.saving.load_model('model.keras')
+
+    img_height = img_width = 244
     labels = ['jernih', 'keruh', 'lumayan_keruh']
 
     image = cv2.imread(image_path)
     image = cv2.resize(image, (img_height, img_width))
     image = np.expand_dims(image, axis=0)
-    image = tf.keras.applications.xception.preprocess_input(image)
+    image = tf.keras.applications.mobilenet.preprocess_input(image)
 
-    predict_result = model.predict(image)
+
+    predict_result = model.predict(image, batch_size=2)
 
     return labels[np.argmax(predict_result)]
 
@@ -194,9 +196,11 @@ def upload_image():
     # check request
     if 'image' not in request.files:
         return "No image file provided", 400
-    
+
+
     # process image
     image_path, filename = image_proccess(request.files['image'])
+    return predict_image(image_path)
     
     # otsu proccess
     otsu_value, category, result_img = otsu_proccess(image_path)
@@ -229,9 +233,9 @@ def send_text():
     return text
 
 if __name__ == 'main':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=80, debug=True)
     
-else:
-    gunicorn_logger = logging.getLogger('gunicorn.error')
-    app.logger.handlers = gunicorn_logger.handlers
-    app.logger.setLevel(gunicorn_logger.level)
+# else:
+#     gunicorn_logger = logging.getLogger('gunicorn.error')
+#     app.logger.handlers = gunicorn_logger.handlers
+#     app.logger.setLevel(gunicorn_logger.level)
