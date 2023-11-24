@@ -62,10 +62,10 @@ def otsu_proccess(image_path):
     if img_classification == 'keruh' or (otsu_value <= 35):
         category = "Air rendaman harus diganti"
 
-    if img_classification == 'lumayan_keruh' or (otsu_value <= 70 and otsu_value >= 36):
+    elif img_classification == 'lumayan_keruh' or (otsu_value <= 70 and otsu_value >= 36):
         category = "Air rendaman lumayan keruh"
 
-    if img_classification == 'jernih' or (otsu_value >= 70):
+    elif img_classification == 'jernih' or (otsu_value >= 70):
         category = "Air rendaman masih jernih"
 
 
