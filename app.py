@@ -59,11 +59,13 @@ def otsu_proccess(image_path):
     otsu_value = cv2.mean(thresholded_image)[0]
 
     # Tentukan kategori berdasarkan nilai Otsu
-    if (otsu_value <= 35) or img_classification == 'keruh':
+    if img_classification == 'keruh' or (otsu_value <= 35):
         category = "Air rendaman harus diganti"
-    elif (otsu_value >= 70 and otsu_value <= 36) or img_classification == 'lumayan_keruh':
+
+    if img_classification == 'lumayan_keruh' or (otsu_value <= 70 and otsu_value >= 36):
         category = "Air rendaman lumayan keruh"
-    else:
+
+    if img_classification == 'jernih' or (otsu_value >= 70):
         category = "Air rendaman masih jernih"
 
 
@@ -124,7 +126,7 @@ def predict_image(image_path):
     import tensorflow as tf
     model = tf.keras.saving.load_model('model.keras')
 
-    img_height = img_width = 244
+    img_height = img_width = 224
     labels = ['jernih', 'keruh', 'lumayan_keruh']
 
     image = cv2.imread(image_path)
@@ -234,8 +236,3 @@ def send_text():
 
 if __name__ == 'main':
     app.run(host='0.0.0.0', port=80, debug=True)
-    
-# else:
-#     gunicorn_logger = logging.getLogger('gunicorn.error')
-#     app.logger.handlers = gunicorn_logger.handlers
-#     app.logger.setLevel(gunicorn_logger.level)
