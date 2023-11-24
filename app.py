@@ -73,7 +73,6 @@ def otsu_proccess(image_path):
     output_path = 'images/threshold.jpg'
     cv2.imwrite(output_path, thresholded_image)
 
-    return img_classification
     return otsu_value, category, output_path
 
 def send_image(chat_id, image_path, result_img, filename, caption):
@@ -202,7 +201,6 @@ def upload_image():
 
     # process image
     image_path, filename = image_proccess(request.files['image'])
-    return predict_image(image_path)
     
     # otsu proccess
     otsu_value, category, result_img = otsu_proccess(image_path)
